@@ -9,10 +9,9 @@ HOST = socket.gethostname()
 PORT = 5000
 MAX_MSG_LEN = 2048
 
-cursor_pos = 6
 
 def recv_msgs(server: socket.socket):
-    global cursor_pos
+    cursor_pos = 6
     while True:
         message = server.recv(MAX_MSG_LEN).decode()
         sys.stdout.write(f"\033[{cursor_pos};0H")  # Moves cursor back to last position
