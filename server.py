@@ -22,7 +22,9 @@ def handle_conn(conn: socket.socket):
     for starting_client_index in range(len(connections)):
         contribution = 2
 
-        list(connections)[starting_client_index].send(str(MODULO).encode()) # -> dict converted to list to allow indexing
+        list(connections)[starting_client_index].send("NEW JOIN".encode()) # -> dict converted to list to allow indexing
+        list(connections)[starting_client_index].send(username.encode())
+        list(connections)[starting_client_index].send(str(MODULO).encode())
 
         for i in range(starting_client_index+1, len(connections)): # Begin revolution about circle of clients
             list(connections)[i].send(str(contribution).encode())

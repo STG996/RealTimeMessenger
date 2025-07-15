@@ -28,12 +28,31 @@ class Client:
     def decrypt_msg(self, msg):
         pass
 
-def recv_msgs(server: socket.socket):
+def handle_new_join(server: socket.socket, client: Client):
+    username = server.recv(MAX_MSG_LEN).decode()
+    print(f"\033[31m{username}\033[m has joined.")
+    # Diffie-Hellman key exchange
+    n = int(server.recv(MAX_MSG_LEN).decode())
+    final = False
+    while not final:
+        recvd = server.recv(MAX_MSG_LEN).decode()
+        if recvd == "UPCOMING FINAL":
+            final = True
+        else:
+            server.send(client.contribute(int(recvd), n))
+    recvd = int(server.recv(MAX_MSG_LEN).decode())
+    client.set_shared_key(recvd, n)
+
+def recv_msgs(server: socket.socket, client: Client):
     cursor_pos = 6
     while True:
         message = server.recv(MAX_MSG_LEN).decode()
+
         sys.stdout.write(f"\033[{cursor_pos};0H")  # Moves cursor back to last position
-        print(message)
+        if message == "NEW JOIN":
+            handle_new_join(server, client)
+        else:
+            print(message)
         cursor_pos += 1
 
 def send_msgs(server: socket.socket):
@@ -53,26 +72,14 @@ def main():
     client = Client()
     server.send(username.encode())
 
-    # Diffie-Hellman key exchange
-    n = int(server.recv(MAX_MSG_LEN).decode())
-    final = False
-    while not final:
-        recvd = server.recv(MAX_MSG_LEN).decode()
-        if recvd == "UPCOMING FINAL":
-            final = True
-        else:
-            server.send(client.contribute(int(recvd), n))
-    recvd = int(server.recv(MAX_MSG_LEN).decode())
-    client.set_shared_key(recvd, n)
-
     os.system(CLEAR)
     print("***********************")
     print("* Real Time Messenger *")
     print("*   (C) 2025 STG996   *")
     print("***********************\n")
 
-    threading.Thread(target=send_msgs, args={server,}).start()
-    threading.Thread(target=recv_msgs, args={server,}).start()
+    threading.Thread(target=send_msgs, args=(server,)).start()
+    threading.Thread(target=recv_msgs, args=(server, client,)).start()
 
 
 if __name__ == "__main__":
