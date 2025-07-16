@@ -8,30 +8,13 @@ CLEAR = "clear" if os.name != "nt" else "cls"
 
 HOST = socket.gethostname()
 PORT = 5000
-MAX_MSG_LEN = 2048
+MAX_MSG_LEN = 4096
 DELIMITER = "\t"
 
 class Client:
     def __init__(self):
         self.__private_key = randint(1000000, 9999999)
         self.__shared_key = None
-
-    def process_recvd(self, recvd):
-        messages = []
-        started = False
-        for character in recvd:
-            if character == DELIMITER and not started:
-                started = True
-                messages.append("")
-            elif character == DELIMITER and started:
-                started = False
-            else:
-                messages[-1] += character
-
-        return messages
-
-    def process_to_send(self, to_send):
-        return f"{DELIMITER}{to_send}{DELIMITER}"
 
     def contribute(self, g, n):
         result = (g ** self.__private_key) % n
@@ -46,32 +29,50 @@ class Client:
     def decrypt_msg(self, msg):
         pass
 
-def handle_new_join(server: socket.socket, client: Client):
-    username = server.recv(MAX_MSG_LEN).decode()
+def process_recvd(recvd):
+    messages = []
+    started = False
+    for character in recvd:
+        if character == DELIMITER and not started:
+            started = True
+            messages.append("")
+        elif character == DELIMITER and started:
+            started = False
+        else:
+            messages[-1] += character
+
+    return messages
+
+def process_to_send(to_send):
+    return f"{DELIMITER}{to_send}{DELIMITER}"
+
+def handle_new_join(server: socket.socket, client: Client, username: str, n: int):
+    # username = server.recv(MAX_MSG_LEN).decode()
     print(f"\033[31m{username}\033[m has joined.")
 
     # Diffie-Hellman key exchange
-    n = int(server.recv(MAX_MSG_LEN).decode())
+    # n = int(server.recv(MAX_MSG_LEN).decode())
     final = False
     while not final:
-        recvd = server.recv(MAX_MSG_LEN).decode()
-        if recvd == "UPCOMING FINAL":
+        recvd = process_recvd(server.recv(MAX_MSG_LEN).decode())
+        if recvd[0] == "UPCOMING FINAL": # ERROR: UPCOMING FINAL NOT FIRST ELEMENT OF LIST
             final = True
         else:
-            server.send(client.contribute(int(recvd), n))
-    recvd = int(server.recv(MAX_MSG_LEN).decode())
-    client.set_shared_key(recvd, n)
+            server.send(process_to_send(client.contribute(int(recvd[0]), n)).encode())
+    client.set_shared_key(recvd[1], n)
 
 def recv_msgs(server: socket.socket, client: Client):
     cursor_pos = 6
     while True:
-        message = server.recv(MAX_MSG_LEN).decode()
+        #message = server.recv(MAX_MSG_LEN).decode()
+        messages = process_recvd(server.recv(MAX_MSG_LEN).decode())
 
         sys.stdout.write(f"\033[{cursor_pos};0H")  # Moves cursor back to last position
-        if message == "NEW JOIN":
-            handle_new_join(server, client)
+        if messages[0] == "NEW JOIN":
+            handle_new_join(server, client, messages[1], int(messages[2]))
+            server.send(process_to_send("RECEIVED SUCCESSFULLY").encode())
         else:
-            print(message)
+            print(messages[0])
         cursor_pos += 1
 
 def send_msgs(server: socket.socket):
