@@ -11,6 +11,7 @@ PORT = 5000
 MAX_MSG_LEN = 4096
 DELIMITER = "\t"
 
+
 class Client:
     def __init__(self):
         self.__private_key = randint(1000000, 9999999)
@@ -29,6 +30,7 @@ class Client:
     def decrypt_msg(self, msg):
         pass
 
+
 def process_recvd(recvd):
     messages = []
     started = False
@@ -43,8 +45,10 @@ def process_recvd(recvd):
 
     return messages
 
+
 def process_to_send(to_send):
     return f"{DELIMITER}{to_send}{DELIMITER}"
+
 
 def handle_new_join(server: socket.socket, client: Client, username: str, n: int):
     # username = server.recv(MAX_MSG_LEN).decode()
@@ -55,11 +59,12 @@ def handle_new_join(server: socket.socket, client: Client, username: str, n: int
     final = False
     while not final:
         recvd = process_recvd(server.recv(MAX_MSG_LEN).decode())
-        if recvd[0] == "UPCOMING FINAL": # ERROR: UPCOMING FINAL NOT FIRST ELEMENT OF LIST
+        if recvd[0] == "UPCOMING FINAL":  # ERROR: UPCOMING FINAL NOT FIRST ELEMENT OF LIST
             final = True
         else:
             server.send(process_to_send(client.contribute(int(recvd[0]), n)).encode())
     client.set_shared_key(recvd[1], n)
+
 
 def recv_msgs(server: socket.socket, client: Client):
     cursor_pos = 6
@@ -75,10 +80,12 @@ def recv_msgs(server: socket.socket, client: Client):
             print(messages[0])
         cursor_pos += 1
 
+
 def send_msgs(server: socket.socket):
     while True:
         message = input()
         server.send(message.encode())
+
 
 def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
