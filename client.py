@@ -13,25 +13,25 @@ DELIMITER = "\t"
 
 
 class Client:
-    def __init__(self):
+    def __init__(self) -> None:
         self.__private_key = randint(1000000, 9999999)
         self.__shared_key = None
 
-    def contribute(self, g, n):
+    def contribute(self, g: int, n: int) -> int:
         result = (g ** self.__private_key) % n
         return result
 
-    def set_shared_key(self, g, n):
+    def set_shared_key(self, g: int, n: int) -> None:
         self.__shared_key = self.contribute(g, n)
 
-    def encrypt_msg(self, msg):
+    def encrypt_msg(self, msg: str) -> str:
         pass
 
-    def decrypt_msg(self, msg):
+    def decrypt_msg(self, msg: str)-> str:
         pass
 
 
-def process_recvd(recvd):
+def process_recvd(recvd: str) -> list[str]:
     messages = []
     started = False
     for character in recvd:
@@ -46,11 +46,11 @@ def process_recvd(recvd):
     return messages
 
 
-def process_to_send(to_send):
+def process_to_send(to_send: str|int) -> str:
     return f"{DELIMITER}{to_send}{DELIMITER}"
 
 
-def handle_new_join(server: socket.socket, client: Client, username: str, n: int):
+def handle_new_join(server: socket.socket, client: Client, username: str, n: int) -> None:
     # username = server.recv(MAX_MSG_LEN).decode()
     print(f"\033[31m{username}\033[m has joined.")
 
@@ -59,14 +59,15 @@ def handle_new_join(server: socket.socket, client: Client, username: str, n: int
     final = False
     while not final:
         recvd = process_recvd(server.recv(MAX_MSG_LEN).decode())
-        if recvd[0] == "UPCOMING FINAL":  # ERROR: UPCOMING FINAL NOT FIRST ELEMENT OF LIST
+        print("Recvd:", recvd) # ERROR: recvd is still "NEW JOIN"
+        if recvd[0] == "UPCOMING FINAL":
             final = True
         else:
             server.send(process_to_send(client.contribute(int(recvd[0]), n)).encode())
     client.set_shared_key(recvd[1], n)
 
 
-def recv_msgs(server: socket.socket, client: Client):
+def recv_msgs(server: socket.socket, client: Client) -> None:
     cursor_pos = 6
     while True:
         #message = server.recv(MAX_MSG_LEN).decode()
@@ -81,7 +82,7 @@ def recv_msgs(server: socket.socket, client: Client):
         cursor_pos += 1
 
 
-def send_msgs(server: socket.socket):
+def send_msgs(server: socket.socket) -> None:
     while True:
         message = input()
         server.send(message.encode())

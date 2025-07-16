@@ -11,12 +11,12 @@ MODULO = 4289372549372  # Random number
 connections = {}
 
 
-def manage_conn(conn: socket.socket):
+def manage_conn(conn: socket.socket) -> None:
     handle_conn(conn)
     main_loop(conn)
 
 
-def handle_conn(conn: socket.socket):
+def handle_conn(conn: socket.socket) -> None:
     username = conn.recv(MAX_MSG_LEN).decode()
     connections[conn] = username
     print(username)
@@ -46,7 +46,7 @@ def handle_conn(conn: socket.socket):
         list(connections)[starting_client_index].send(process_to_send(contribution).encode())
 
 
-def main_loop(conn: socket.socket):
+def main_loop(conn: socket.socket) -> None:
     while True:
         message = conn.recv(MAX_MSG_LEN).decode()
         for client in connections:
