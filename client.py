@@ -9,11 +9,29 @@ CLEAR = "clear" if os.name != "nt" else "cls"
 HOST = socket.gethostname()
 PORT = 5000
 MAX_MSG_LEN = 2048
+DELIMITER = "\t"
 
 class Client:
     def __init__(self):
         self.__private_key = randint(1000000, 9999999)
         self.__shared_key = None
+
+    def process_recvd(self, recvd):
+        messages = []
+        started = False
+        for character in recvd:
+            if character == DELIMITER and not started:
+                started = True
+                messages.append("")
+            elif character == DELIMITER and started:
+                started = False
+            else:
+                messages[-1] += character
+
+        return messages
+
+    def process_to_send(self, to_send):
+        return f"{DELIMITER}{to_send}{DELIMITER}"
 
     def contribute(self, g, n):
         result = (g ** self.__private_key) % n
@@ -31,6 +49,7 @@ class Client:
 def handle_new_join(server: socket.socket, client: Client):
     username = server.recv(MAX_MSG_LEN).decode()
     print(f"\033[31m{username}\033[m has joined.")
+
     # Diffie-Hellman key exchange
     n = int(server.recv(MAX_MSG_LEN).decode())
     final = False
