@@ -101,10 +101,10 @@ def main():
     server.send(username.encode())
 
     os.system(CLEAR)
-    print("***********************")
-    print("* Real Time Messenger *")
+    print("* * * * * * * * * * * *")
+    print("*  RealTimeMessenger  *")
     print("*   (C) 2025 STG996   *")
-    print("***********************\n")
+    print("* * * * * * * * * * * *\n")
 
     threading.Thread(target=send_msgs, args=(server,)).start()
     threading.Thread(target=recv_msgs, args=(server, client,)).start()
