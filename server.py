@@ -24,8 +24,8 @@ def handle_conn(conn: socket.socket) -> None:
     # Diffie-Hellman key exchange
     for starting_client_index in range(len(connections)):
         contribution = 2
-        confirmation_recvd = False
 
+        confirmation_recvd = False
         while not confirmation_recvd:
             list(connections)[starting_client_index].send(
                 process_to_send("NEW JOIN").encode())  #-> dict converted to list to allow indexing
@@ -42,8 +42,13 @@ def handle_conn(conn: socket.socket) -> None:
             list(connections)[j].send(process_to_send(str(contribution)).encode())
             contribution = process_recvd(list(connections)[j].recv(MAX_MSG_LEN).decode())[0]
 
-        list(connections)[starting_client_index].send(process_to_send("UPCOMING FINAL").encode())
-        list(connections)[starting_client_index].send(process_to_send(contribution).encode())
+        confirmation_recvd = False
+        while not confirmation_recvd:
+            list(connections)[starting_client_index].send(process_to_send("UPCOMING FINAL").encode())
+            list(connections)[starting_client_index].send(process_to_send(contribution).encode())
+            recvd = process_recvd(list(connections)[starting_client_index].recv(MAX_MSG_LEN).decode())[0]
+            if recvd == "RECEIVED SUCCESSFULLY":
+                confirmation_recvd = True
 
 
 def main_loop(conn: socket.socket) -> None:

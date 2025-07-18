@@ -4,13 +4,11 @@ import sys
 import os
 from random import randint
 
-CLEAR = "clear" if os.name != "nt" else "cls"
-
 HOST = socket.gethostname()
 PORT = 5000
 MAX_MSG_LEN = 4096
 DELIMITER = "\t"
-
+CLEAR = "clear" if os.name != "nt" else "cls"
 
 class Client:
     def __init__(self) -> None:
@@ -41,7 +39,7 @@ def process_recvd(recvd: str) -> list[str]:
         elif character == DELIMITER and started:
             started = False
         else:
-            messages[-1] += character
+            messages[-1] += character # something wrong here when called in server.py
 
     return messages
 
@@ -51,6 +49,8 @@ def process_to_send(to_send: str|int) -> str:
 
 
 def handle_new_join(server: socket.socket, client: Client, username: str, n: int) -> None:
+    server.send(process_to_send("RECEIVED SUCCESSFULLY").encode())
+
     # username = server.recv(MAX_MSG_LEN).decode()
     print(f"\033[31m{username}\033[m has joined.")
 
@@ -59,12 +59,17 @@ def handle_new_join(server: socket.socket, client: Client, username: str, n: int
     final = False
     while not final:
         recvd = process_recvd(server.recv(MAX_MSG_LEN).decode())
-        print("Recvd:", recvd) # ERROR: recvd is still "NEW JOIN"
         if recvd[0] == "UPCOMING FINAL":
+            try:
+                recvd[1]
+            except IndexError:
+                server.send(process_to_send("not received").encode())
+                continue
             final = True
         else:
             server.send(process_to_send(client.contribute(int(recvd[0]), n)).encode())
-    client.set_shared_key(recvd[1], n)
+    client.set_shared_key(int(recvd[1]), n)
+    server.send(process_to_send("RECEIVED SUCCESSFULLY").encode())
 
 
 def recv_msgs(server: socket.socket, client: Client) -> None:
@@ -75,8 +80,10 @@ def recv_msgs(server: socket.socket, client: Client) -> None:
 
         sys.stdout.write(f"\033[{cursor_pos};0H")  # Moves cursor back to last position
         if messages[0] == "NEW JOIN":
-            handle_new_join(server, client, messages[1], int(messages[2]))
-            server.send(process_to_send("RECEIVED SUCCESSFULLY").encode())
+            try:
+                handle_new_join(server, client, messages[1], int(messages[2]))
+            except IndexError:
+                continue
         else:
             print(messages[0])
         cursor_pos += 1
